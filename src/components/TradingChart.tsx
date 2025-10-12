@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { createChart, IChartApi, CandlestickData } from 'lightweight-charts';
+import { createChart, IChartApi, CandlestickData, ColorType, CandlestickSeries } from 'lightweight-charts';
 
 interface TradingChartProps {
   timeframe: string;
@@ -20,7 +20,7 @@ export const TradingChart = ({ timeframe, apiEndpoint, wsEndpoint }: TradingChar
     // Create chart
     const chart = createChart(chartContainerRef.current, {
       layout: {
-        background: { color: 'hsl(216, 14%, 7%)' },
+        background: { type: ColorType.Solid, color: 'hsl(216, 14%, 7%)' },
         textColor: 'hsl(215, 20.2%, 65.1%)',
       },
       grid: {
@@ -39,7 +39,7 @@ export const TradingChart = ({ timeframe, apiEndpoint, wsEndpoint }: TradingChar
       },
     });
 
-    const candlestickSeries = chart.addSeries('Candlestick' as any, {
+    const candlestickSeries = chart.addSeries(CandlestickSeries, {
       upColor: 'hsl(134, 61%, 41%)',
       downColor: 'hsl(0, 72%, 51%)',
       borderVisible: false,
