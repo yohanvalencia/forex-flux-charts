@@ -10,11 +10,21 @@ const Index = () => {
   const [priceType, setPriceType] = useState<PriceType>('mid');
   const [selectedCurrencyPair, setSelectedCurrencyPair] = useState('EURUSD');
   const [displayCurrencyPair, setDisplayCurrencyPair] = useState('EURUSD');
-  const [tenor, setTenor] = useState('SPOT');
+  const [tenor, setTenor] = useState('0'); // '0' = SPOT
 
   // Replace these with your actual endpoints
   const API_ENDPOINT = undefined; // e.g., 'https://your-api.com/historical'
   const WS_ENDPOINT = 'ws://127.0.0.1:8080';
+
+  // Tenor mapping for display
+  const TENOR_LABELS: { [key: string]: string } = {
+    '0': 'SPOT', '1': 'D1', '2': 'W1', '3': 'W2', '4': 'W3',
+    '5': 'M1', '6': 'M2', '7': 'M3', '8': 'M4', '9': 'M5',
+    '10': 'M6', '11': 'M7', '12': 'M8', '13': 'M9', '14': 'M10',
+    '15': 'M11', '16': 'M12', '17': 'M15', '18': 'M18',
+    '19': 'Y1', '20': 'Y2', '21': 'Y3', '22': 'Y4', '23': 'Y5',
+    '24': 'Y6', '25': 'Y7', '26': 'Y8', '27': 'Y9', '28': 'Y10',
+  };
 
   // Format currency pair for display (EURUSD -> EUR/USD)
   const formatCurrencyPair = (pair: string) => {
@@ -60,7 +70,7 @@ const Index = () => {
               wsEndpoint={WS_ENDPOINT}
               priceType={priceType}
               currencyPair={selectedCurrencyPair}
-              tenor={tenor}
+              tenorLabel={TENOR_LABELS[tenor]}
               onCurrencyPairUpdate={setDisplayCurrencyPair}
             />
           </div>
@@ -71,7 +81,7 @@ const Index = () => {
             </p>
             <div className="mt-3 space-y-2 text-sm font-mono">
               <div className="text-chart-text">
-                <span className="text-primary">WebSocket URL:</span> {WS_ENDPOINT}?currency_pair={selectedCurrencyPair}&tenor={tenor}
+                <span className="text-primary">WebSocket URL:</span> {WS_ENDPOINT}?currency_pair={selectedCurrencyPair}&tenor={TENOR_LABELS[tenor]}
               </div>
               <div className="text-chart-text">
                 <span className="text-primary">Selected Pair:</span> {selectedCurrencyPair}
@@ -80,7 +90,7 @@ const Index = () => {
                 <span className="text-primary">Receiving Data:</span> {formatCurrencyPair(displayCurrencyPair)}
               </div>
               <div className="text-chart-text">
-                <span className="text-primary">Tenor:</span> {tenor}
+                <span className="text-primary">Tenor:</span> {TENOR_LABELS[tenor] || tenor}
               </div>
               <div className="text-chart-text">
                 <span className="text-primary">Price Type:</span> {priceType.toUpperCase()}

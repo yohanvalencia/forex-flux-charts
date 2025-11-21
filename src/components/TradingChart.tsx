@@ -8,7 +8,7 @@ interface TradingChartProps {
   wsEndpoint?: string;
   priceType?: PriceType;
   currencyPair?: string;
-  tenor?: string;
+  tenorLabel?: string;
   onCurrencyPairUpdate?: (pair: string) => void;
 }
 
@@ -18,7 +18,7 @@ export const TradingChart = ({
   wsEndpoint,
   priceType = 'mid',
   currencyPair,
-  tenor,
+  tenorLabel,
   onCurrencyPairUpdate
 }: TradingChartProps) => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
@@ -136,7 +136,7 @@ export const TradingChart = ({
     // Build WebSocket URL with query parameters
     const params = new URLSearchParams();
     if (currencyPair) params.append('currency_pair', currencyPair);
-    if (tenor) params.append('tenor', tenor);
+    if (tenorLabel) params.append('tenor', tenorLabel);
 
     const wsUrl = params.toString()
       ? `${wsEndpoint}?${params.toString()}`
@@ -195,7 +195,7 @@ export const TradingChart = ({
         wsRef.current.close();
       }
     };
-  }, [wsEndpoint, currencyPair, tenor, priceType, onCurrencyPairUpdate]);
+  }, [wsEndpoint, currencyPair, tenorLabel, priceType, onCurrencyPairUpdate]);
 
   // Update chart when price type changes
   useEffect(() => {
