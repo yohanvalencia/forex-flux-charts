@@ -1,18 +1,30 @@
 import { useEffect, useRef, useState } from 'react';
 import { createChart, IChartApi, CandlestickData, ColorType, CandlestickSeries } from 'lightweight-charts';
+import { WebSocketCandleMessage, PriceType } from '@/types/websocket';
 
 interface TradingChartProps {
   timeframe: string;
   apiEndpoint?: string;
   wsEndpoint?: string;
+  priceType?: PriceType;
+  currencyPair?: string;
+  onCurrencyPairUpdate?: (pair: string) => void;
 }
 
-export const TradingChart = ({ timeframe, apiEndpoint, wsEndpoint }: TradingChartProps) => {
+export const TradingChart = ({
+  timeframe,
+  apiEndpoint,
+  wsEndpoint,
+  priceType = 'mid',
+  currencyPair,
+  onCurrencyPairUpdate
+}: TradingChartProps) => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<any>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const candleDataRef = useRef<Map<number, WebSocketCandleMessage>>(new Map());
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
@@ -113,25 +125,52 @@ export const TradingChart = ({ timeframe, apiEndpoint, wsEndpoint }: TradingChar
       wsRef.current.close();
     }
 
-    const ws = new WebSocket(`${wsEndpoint}?timeframe=${timeframe}`);
-    
+    // Clear stored candle data when currency pair changes
+    candleDataRef.current.clear();
+    if (seriesRef.current) {
+      seriesRef.current.setData([]);
+    }
+
+    // Build WebSocket URL with currency_pair query parameter
+    const wsUrl = currencyPair
+      ? `${wsEndpoint}?currency_pair=${currencyPair}`
+      : wsEndpoint;
+
+    const ws = new WebSocket(wsUrl);
+
     ws.onopen = () => {
-      console.log('WebSocket connected');
+      console.log('WebSocket connected to', wsUrl);
     };
 
     ws.onmessage = (event) => {
       try {
-        const update = JSON.parse(event.data);
+        const message: WebSocketCandleMessage = JSON.parse(event.data);
+
+        // Update currency pair if callback provided
+        if (onCurrencyPairUpdate && message.currency_pair) {
+          onCurrencyPairUpdate(message.currency_pair);
+        }
+
+        // Convert timestamp from milliseconds to seconds
+        const timeInSeconds = Math.floor(message.start / 1000);
+
+        // Store the complete message for potential price type switching
+        candleDataRef.current.set(timeInSeconds, message);
+
+        // Extract OHLC data based on selected price type
+        const ohlc = message[priceType];
+
         const candleData: CandlestickData = {
-          time: update.time,
-          open: update.open,
-          high: update.high,
-          low: update.low,
-          close: update.close,
+          time: timeInSeconds as any,
+          open: ohlc.open,
+          high: ohlc.high,
+          low: ohlc.low,
+          close: ohlc.close,
         };
+
         seriesRef.current?.update(candleData);
       } catch (error) {
-        console.error('Error processing WebSocket message:', error);
+        console.error('Error processing WebSocket message:', error, event.data);
       }
     };
 
@@ -150,7 +189,28 @@ export const TradingChart = ({ timeframe, apiEndpoint, wsEndpoint }: TradingChar
         wsRef.current.close();
       }
     };
-  }, [timeframe, wsEndpoint]);
+  }, [wsEndpoint, currencyPair, priceType, onCurrencyPairUpdate]);
+
+  // Update chart when price type changes
+  useEffect(() => {
+    if (!seriesRef.current || candleDataRef.current.size === 0) return;
+
+    // Reload all stored candles with new price type
+    const sortedCandles = Array.from(candleDataRef.current.entries())
+      .sort(([timeA], [timeB]) => timeA - timeB)
+      .map(([time, message]) => {
+        const ohlc = message[priceType];
+        return {
+          time: time as any,
+          open: ohlc.open,
+          high: ohlc.high,
+          low: ohlc.low,
+          close: ohlc.close,
+        };
+      });
+
+    seriesRef.current.setData(sortedCandles);
+  }, [priceType]);
 
   // Generate mock data for demo
   const generateMockData = () => {

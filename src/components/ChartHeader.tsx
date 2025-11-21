@@ -1,5 +1,7 @@
 import { TrendingUp } from 'lucide-react';
 import { TimeframeSelector } from './TimeframeSelector';
+import { PriceTypeSelector } from './PriceTypeSelector';
+import { PriceType } from '@/types/websocket';
 
 interface ChartHeaderProps {
   symbol: string;
@@ -7,6 +9,8 @@ interface ChartHeaderProps {
   change: string;
   timeframe: string;
   onTimeframeChange: (timeframe: string) => void;
+  priceType: PriceType;
+  onPriceTypeChange: (priceType: PriceType) => void;
 }
 
 export const ChartHeader = ({
@@ -15,6 +19,8 @@ export const ChartHeader = ({
   change,
   timeframe,
   onTimeframeChange,
+  priceType,
+  onPriceTypeChange,
 }: ChartHeaderProps) => {
   const isPositive = change.startsWith('+');
 
@@ -35,7 +41,10 @@ export const ChartHeader = ({
           </span>
         </div>
       </div>
-      <TimeframeSelector selected={timeframe} onSelect={onTimeframeChange} />
+      <div className="flex items-center gap-4">
+        <PriceTypeSelector priceType={priceType} onPriceTypeChange={onPriceTypeChange} />
+        <TimeframeSelector selected={timeframe} onSelect={onTimeframeChange} />
+      </div>
     </div>
   );
 };
